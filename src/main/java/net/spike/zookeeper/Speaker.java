@@ -2,6 +2,7 @@ package net.spike.zookeeper;
 
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
+import java.lang.Math;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -23,6 +24,7 @@ public class Speaker implements Runnable, NodeMonitor.NodeMonitorListener {
     private String message;
     private String processName;
     private long counter = 0;
+	private int uid = -1;
     private volatile boolean canSpeak = false;
 
     public Speaker(String message) throws IOException, InterruptedException, KeeperException {
@@ -31,9 +33,8 @@ public class Speaker implements Runnable, NodeMonitor.NodeMonitorListener {
     }
 
     private static String getUniqueIdentifier() {
-        String processName = ManagementFactory.getRuntimeMXBean().getName();
-        String processId = processName.substring(0, processName.indexOf("@"));
-        return "pid-" + processId + ".";
+        //String processName = ManagementFactory.getRuntimeMXBean().getName();
+        return "pid-" + (int)(Math.floor(Math.random() * 1000)) + ".";
     }
 
     public void run() {
@@ -67,5 +68,10 @@ public class Speaker implements Runnable, NodeMonitor.NodeMonitorListener {
     @Override
     public String getProcessName() {
         return processName;
+    }
+	
+	@Override
+    public String generateProcessName(int uid) {
+        return "pid-" + uid + ".";
     }
 }

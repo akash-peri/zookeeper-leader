@@ -51,8 +51,8 @@ public class NodeMonitorTest {
         children.add("/ELECTION/pid-163.000015");
         children.add("/ELECTION/pid-12333.000333");
         children.add("/ELECTION/pid-003.000033");
-        long expected = 3;
-        long result = classToTest.getLowestNumber(children);
+        long expected = 333;
+        long result = classToTest.getHighestNumber(children);
         assertEquals(expected, result);
     }
 

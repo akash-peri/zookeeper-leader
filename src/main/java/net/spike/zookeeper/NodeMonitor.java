@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.lang.*;
+import java.util.*;
 
 import static org.apache.zookeeper.CreateMode.PERSISTENT;
 
@@ -31,6 +33,7 @@ public class NodeMonitor implements Watcher, AsyncCallback.ChildrenCallback {
      */
     public void start() throws IOException {
         this.zooKeeper = new ZooKeeper("localhost:2181", 3000, this);
+		logger.debug("Not the node! " + znode);
     }
 
     public void setZooKeeper(ZooKeeper zooKeeper) {
@@ -40,20 +43,22 @@ public class NodeMonitor implements Watcher, AsyncCallback.ChildrenCallback {
     public void setListener(NodeMonitorListener monitor) {
         this.listener = monitor;
         this.znode = ROOT + "/" + listener.getProcessName();
+		logger.debug("setListener: What's the listener? " + listener.getProcessName());
     }
 
     @Override
     public void processResult(int rc, String path, Object o, List<String> children) {
-        logger.debug(listener.getProcessName() + "Children callback: " +
-                listener.getProcessName() + ":" + children.toString());
+        logger.debug(listener.getProcessName() + "Children callback: " + listener.getProcessName() + ":" + children.toString());
         if(rc == KeeperException.Code.Ok) {
-            if(getLowestNumber(children) == sequenceNumber)
+            if(getHighestNumber(children) == sequenceNumber)
                 listener.startSpeaking();
             else
                 listener.stopSpeaking();
         } else {
             listener.stopSpeaking();
         }
+		//logger.debug(listener.getProcessName() + "What's in a sequence number?: " + sequenceNumber);
+		//logger.debug(listener.getProcessName() + "Bunch of children: " + children);
     }
 
     public long getLowestNumber(List<String> children) {
@@ -63,6 +68,15 @@ public class NodeMonitor implements Watcher, AsyncCallback.ChildrenCallback {
             if(current < lowest) lowest = current;
         }
         return lowest;
+    }
+	
+	public long getHighestNumber(List<String> children) {
+        long highest = sequenceNumber;
+        for (String child : children) {
+            long current = parseSequenceNumber(child);
+            if(current > highest) highest = current;
+        }
+        return highest;
     }
 
     public long parseSequenceNumber(String znode) {
@@ -75,6 +89,8 @@ public class NodeMonitor implements Watcher, AsyncCallback.ChildrenCallback {
         public void stopSpeaking();
 
         public String getProcessName();
+		
+		public String generateProcessName(int uid);
 
     }
 
@@ -120,7 +136,15 @@ public class NodeMonitor implements Watcher, AsyncCallback.ChildrenCallback {
         }
     }
 
+	/*
     public long createZnode() throws InterruptedException, KeeperException {
+        znode = zooKeeper.create(znode, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
+        logger.debug("Created znode: " + znode);
+        return parseSequenceNumber(znode);
+    }
+	*/
+	
+	public long createZnode() throws InterruptedException, KeeperException {
         znode = zooKeeper.create(znode, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
         logger.debug("Created znode: " + znode);
         return parseSequenceNumber(znode);
